@@ -1,0 +1,248 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date:    11:27:12 09/29/2015 
+-- Design Name: 
+-- Module Name:    CacheController - Behavioral 
+-- Project Name: 
+-- Target Devices: 
+-- Tool versions: 
+-- Description: 
+--
+-- Dependencies: 
+--
+-- Revision: 
+-- Revision 0.01 - File Created
+-- Additional Comments: 
+--
+----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity CacheController is
+    Port (
+			clk 							: in STD_LOGIC;
+			--Debugging
+			ADDR							: out STD_LOGIC_VECTOR(15 downto 0);
+			DOUT 							: out	STD_LOGIC_VECTOR(7 downto 0);
+			WR_RD, MSTRB, RDY ,CS	: out STD_LOGIC
+			);
+
+end CacheController;
+
+architecture Behavioral of CacheController is
+	
+	--CPU Signals
+	signal CPU_Dout, CPU_DIN		: STD_LOGIC_VECTOR(7 downto 0);
+	signal CPU_addr 					: STD_LOGIC_VECTOR (15 downto 0);
+	signal CPU_WR_RD,CPU_CS 		: STD_LOGIC;
+	signal sRDY							: STD_LOGIC;
+	signal tagFROMCPU 				: STD_LOGIC_VECTOR(7 downto 0);
+	signal indexFROMCPU				: STD_LOGIC_VECTOR(2 downto 0);
+	signal offsetFROMCPU				: STD_LOGIC_VECTOR(4 downto 0);
+	
+	
+	--State 0: H/M 					--0001
+	--STATE 1: Load from MEMORY 	--0010
+	--STATE 2: Write Back 			--0100
+	--STATE 3: IDLE 					--1000
+	TYPE STATETYPE IS (state_4, state_0, state_1, state_2, state_3);
+	SIGNAL present_state				: STATETYPE ;
+	signal STATES 					: STD_LOGIC_VECTOR(3 downto 0);
+	
+	--SRAM Signals
+	signal dirtyBIT				: STD_LOGIC_VECTOR (7 downto 0) := "00000000";
+	signal validBIT				: STD_LOGIC_VECTOR (7 downto 0) := "00000000";
+	signal s_ADDR, sDIN, sDOUT	: STD_LOGIC_VECTOR (7 downto 0);
+	signal sWEA						: STD_LOGIC_VECTOR (0 downto 0);
+	signal TAGMAT					: STD_LOGIC := '0';
+	
+	type ram_type is array (7 downto 0) of STD_LOGIC_VECTOR(7 downto 0);
+		signal myTag: ram_type := ((others=> (others=>'0')));
+	
+	--ICON & VIO  & ILA Signals 
+	signal control0 : STD_LOGIC_VECTOR(35 downto 0);
+	signal ila_data : std_logic_vector(35 downto 0);
+	signal trig0 	 : std_logic_vector(0 TO 0);
+	
+	--SDRAM Signals
+	signal sSDRAM_DIN,sSDRAM_DOUT	: STD_LOGIC_VECTOR(7 downto 0);
+	signal sSDRAM_addr				: STD_LOGIC_VECTOR(15 downto 0);
+	signal sMSTRB,sSDRAM_WR_RD		: STD_LOGIC;
+	signal counter						: integer := 0;
+	signal offset						: integer := 0;
+
+	--Component Declaration 
+	COMPONENT SDRAMController 
+    Port ( 
+		clk								: in  STD_LOGIC;
+		ADDR 								: in  STD_LOGIC_VECTOR (15 downto 0);
+      WR_RD 							: in  STD_LOGIC;
+      MSTRB 							: in  STD_LOGIC;
+      DIN 								: in  STD_LOGIC_VECTOR (7 downto 0);
+      DOUT 								: out STD_LOGIC_VECTOR (7 downto 0));
+	END COMPONENT;
+
+	COMPONENT CPU_gen 
+	Port ( 
+		clk 								: in  STD_LOGIC;
+      rst 								: in  STD_LOGIC;
+      trig 								: in  STD_LOGIC;
+      Address 							: out STD_LOGIC_VECTOR (15 downto 0);
+      wr_rd 							: out STD_LOGIC;
+      cs 								: out STD_LOGIC;
+      DOut 								: out STD_LOGIC_VECTOR (7 downto 0)
+	);
+	END COMPONENT;
+	
+	COMPONENT SRAM
+	PORT (
+    clka 								: IN STD_LOGIC;
+    wea 									: IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    addra 								: IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+    dina 								: IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+    douta 								: OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
+	);
+	END COMPONENT;
+	
+	COMPONENT icon
+	PORT (
+    CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0));
+	END COMPONENT;
+	
+	COMPONENT ila
+	PORT (
+    CONTROL 							: INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+    CLK 									: IN STD_LOGIC;
+    DATA 								: IN STD_LOGIC_VECTOR(35 DOWNTO 0);
+    TRIG0 								: IN STD_LOGIC_VECTOR(0 TO 0));
+	END COMPONENT;
+	
+BEGIN
+	--Port Maps
+	MY_CPU_gen 							: CPU_gen  			Port Map (clk,'0',sRDY,CPU_addr,CPU_WR_RD,CPU_CS,CPU_DOUT);
+	SDRAM 								: SDRAMController Port Map (clk,sSDRAM_addr,sSDRAM_WR_RD,sMSTRB,sSDRAM_DIN,sSDRAM_DOUT);
+	mySRAM 								: SRAM				PORT MAP (clk,sWEA,s_ADDR, sDIN, sDOUT);
+	myIcon 								: icon 				PORT MAP (CONTROL0);
+	myILA 								: ila					PORT MAP (CONTROL0,CLK,ila_data, TRIG0);
+	
+	process(clk, CPU_CS)	
+	begin
+		if (clk'event AND clk = '1') then
+			if (present_state = state_4) then
+				sRDY <= '0';				
+				tagFROMCPU 		<= CPU_ADDR(15 downto 8);
+				indexFROMCPU	<= CPU_ADDR(7  downto 5);
+				offsetFROMCPU	<= CPU_ADDR(4  downto 0);
+				sSDRAM_addr(15 downto 5) <= CPU_ADDR(15 downto 5);
+				s_ADDR(7 downto 0) <= CPU_ADDR(7 downto 0);
+				
+				if (validBIT(to_integer(unsigned(indexFROMCPU))) = '1' AND myTag(to_integer(unsigned(indexFROMCPU))) = tagFROMCPU) then -- HIT
+					TAGMAT <= '1';
+					present_state <= state_0;
+					STATES <= "0001";
+				else --MISS
+					TAGMAT <= '0'; 
+					if (dirtyBIT(to_integer(unsigned(indexFROMCPU))) = '1' AND validBIT(to_integer(unsigned(indexFROMCPU))) = '1') then
+						present_state <= state_2; --WRITE BACK
+						STATES <= "0100";
+					else
+						present_state <= state_1; --LOAD FROM MEMORY
+						STATES <= "0010";
+					end if;
+				end if;
+				
+			
+			elsif (present_state = state_0) then --Start State : Checks for HIT or MISS, PERFORMS HIT OPERATION or MOVES TO STATE_1/STATE_2
+				if (CPU_WR_RD = '1') then --WRITE
+						dirtyBIT(to_integer(unsigned(indexFROMCPU))) <= '1';
+						validBIT(to_integer(unsigned(indexFROMCPU))) <= '1';
+						sDIN <= CPU_DOUT;
+						CPU_DIN <= "00000000"; -- OUTPUT Zero if Writing
+						sWEA <= "1";
+					else
+						sWEA <= "0";
+						CPU_DIN <= sDOUT;
+					end if;	
+					
+				present_state <= state_3; -- Transaction complete, go to Idle
+				STATES <= "1000";
+				
+			elsIF (present_state = state_1) then --LOAD FROM MEMORY
+				if (counter = 64) then
+					counter <= 0;
+					validBIT(to_integer(unsigned(indexFROMCPU))) <= '1';
+					myTag(to_integer(unsigned(indexFROMCPU))) <= tagFROMCPU;
+					offset <= 0;
+					present_state <= state_0;
+					STATES <= "0001";
+				else
+					if (counter mod 2 = 1) then
+						sMSTRB <= '0';
+					else
+						sSDRAM_addr(4 downto 0) <= STD_LOGIC_VECTOR(to_unsigned(offset, offsetFROMCPU'length));
+						sSDRAM_WR_RD <= '0';
+						sMSTRB <= '1';
+						s_ADDR(7 downto 5) <= indexFROMCPU;
+						s_ADDR(4 downto 0) <= STD_LOGIC_VECTOR(to_unsigned(offset, offsetFROMCPU'length));
+						sDIN <= sSDRAM_DOUT;
+						sWEA <= "1";
+						offset <= offset + 1;
+					end if;
+					counter <= counter + 1;
+				end if;		
+			elsIF(present_state = state_2) then -- WRITEBACK
+				if (Counter = 64) then
+					counter <= 0;
+					dirtyBIT(to_integer(unsigned(indexFROMCPU))) <= '0';
+					offset <= 0;
+					present_state <= state_1;
+					STATES <= "0010";
+				else
+					if (counter mod 2 = 1) then
+						sMSTRB <= '0';
+					else
+						sSDRAM_addr(4 downto 0) <= STD_LOGIC_VECTOR(to_unsigned(offset, offsetFROMCPU'length));
+						sSDRAM_WR_RD <= '1';
+						s_ADDR(7 downto 5) <= indexFROMCPU;
+						s_ADDR(4 downto 0) <= STD_LOGIC_VECTOR(to_unsigned(offset, offsetFROMCPU'length));
+						sWEA <= "0";
+						sSDRAM_DIN <= sDOUT;
+						sMSTRB <= '1';
+						offset <= offset + 1;
+					end if;
+					counter <= counter + 1;
+				end if;
+			elsIF (present_state = state_3) then
+				sRDY <= '1';
+				if (CPU_CS = '1') then
+					present_state <= state_4;
+					STATES <= "1111";
+				end if;
+			end if;
+		end if;
+	end process;
+	
+	MSTRB 	<= sMSTRB;
+	ADDR 		<= CPU_ADDR;
+	WR_RD 	<= CPU_WR_RD;
+	DOUT		<= CPU_DIN;
+	RDY		<= sRDY;
+	CS 		<= CPU_CS;
+	
+	ila_data(15 downto 0) <= CPU_ADDR;
+	ila_data(16) <= CPU_WR_RD;
+	ila_data(17) <= sRDY;
+	ila_data(18)<= sMSTRB;
+	ila_data(26 downto 19) <= CPU_DIN;
+	ila_data(30 downto 27) <= STATES;
+	ila_data(31) <= CPU_CS;
+	ila_data(32) <= validBIT(to_integer(unsigned(indexFROMCPU)));
+	ila_data(33) <= dirtyBIT(to_integer(unsigned(indexFROMCPU)));
+	ila_data(34) <= TAGMAT;
+	--ila_data(35) not used
+	
+end Behavioral;

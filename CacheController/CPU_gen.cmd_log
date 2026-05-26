@@ -1,0 +1,2 @@
+vhdtdtfi -lib work CPU_gen.vhd -prj CACHE2 -o CPU_gen.spl -module CPU_gen -template /CMC/tools/xilinx/13.4/ISE_DS/ISE//data/splfile.tft -deleteonerror 
+spl2sym -intstyle ise -family spartan3e CPU_gen.spl /home/student2/nrecto/TMU/4thYear/COE758/CacheController/CPU_gen.sym 

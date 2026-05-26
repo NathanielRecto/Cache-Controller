@@ -1,0 +1,2 @@
+vhdtdtfi -lib work SDRAMController.vhd -prj CACHE2 -o SDRAMController.spl -module SDRAMController -template /CMC/tools/xilinx/13.4/ISE_DS/ISE//data/splfile.tft -deleteonerror 
+spl2sym -intstyle ise -family spartan3e SDRAMController.spl /home/student2/nrecto/TMU/4thYear/COE758/CacheController/SDRAMController.sym 

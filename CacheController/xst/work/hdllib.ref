@@ -1,0 +1,12 @@
+AR ila ila_a /home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/ila.vhd sub00/vhpl09 1761678630
+EN cachecontroller NULL /home/student2/nrecto/TMU/4thYear/COE758/CacheController/CacheController.vhd sub00/vhpl10 1761678631
+AR icon icon_a /home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/icon.vhd sub00/vhpl07 1761678628
+EN sdramcontroller NULL /home/student2/nrecto/TMU/4thYear/COE758/CacheController/SDRAMController.vhd sub00/vhpl02 1761678623
+EN icon NULL /home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/icon.vhd sub00/vhpl06 1761678627
+EN cpu_gen NULL /home/student2/nrecto/TMU/4thYear/COE758/CacheController/CPU_gen.vhd sub00/vhpl00 1761678621
+EN sram NULL /home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/SRAM.vhd sub00/vhpl04 1761678625
+AR sram sram_a /home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/SRAM.vhd sub00/vhpl05 1761678626
+AR cachecontroller behavioral /home/student2/nrecto/TMU/4thYear/COE758/CacheController/CacheController.vhd sub00/vhpl11 1761678632
+AR cpu_gen behavioral /home/student2/nrecto/TMU/4thYear/COE758/CacheController/CPU_gen.vhd sub00/vhpl01 1761678622
+AR sdramcontroller behavioral /home/student2/nrecto/TMU/4thYear/COE758/CacheController/SDRAMController.vhd sub00/vhpl03 1761678624
+EN ila NULL /home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/ila.vhd sub00/vhpl08 1761678629

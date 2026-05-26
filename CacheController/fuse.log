@@ -1,0 +1,16 @@
+Running: /CMC/tools/xilinx/13.4/ISE_DS/ISE/bin/lin64/unwrapped/fuse -intstyle ise -incremental -o /home/student2/nrecto/TMU/4thYear/COE758/CacheController/TEST_isim_beh.exe -prj /home/student2/nrecto/TMU/4thYear/COE758/CacheController/TEST_beh.prj work.TEST 
+ISim O.87xd (signature 0x8ddf5b5d)
+Number of CPUs detected in this system: 8
+Turning on mult-threading, number of parallel sub-compilation jobs: 16 
+Determining compilation order of HDL files
+Parsing VHDL file "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/SRAM.vhd" into library work
+Parsing VHDL file "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/SDRAMController.vhd" into library work
+Parsing VHDL file "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/ila.vhd" into library work
+Parsing VHDL file "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/ipcore_dir/icon.vhd" into library work
+Parsing VHDL file "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/CPU_gen.vhd" into library work
+Parsing VHDL file "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/CacheController.vhd" into library work
+Parsing VHDL file "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/TEST.vhd" into library work
+Starting static elaboration
+ERROR:HDLCompiler:1156 - "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/TEST.vhd" Line 47: Formal port <STATES> does not exist in entity <CacheController>.  Please compare the definition of block <CacheController> to its component declaration and its instantion to detect the mismatch.
+ERROR:HDLCompiler:1156 - "/home/student2/nrecto/TMU/4thYear/COE758/CacheController/TEST.vhd" Line 49: Formal port <MSTRB> does not exist in entity <CacheController>.  Please compare the definition of block <CacheController> to its component declaration and its instantion to detect the mismatch.
+ERROR:Simulator:777 - Static elaboration of top level VHDL design unit test in library work failed
