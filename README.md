@@ -92,7 +92,7 @@ The design was verified using ChipScope/ILA waveform captures. The most importan
 
 ### Case 1 - Read Hit
 
-The CPU issues a read request. Since the valid bit is set and the tag matches, the controller reads data from SRAM and sends it to the CPU. `MEMSTRB` remains low because SDRAM is not accessed.
+The CPU issues a read request.2 Since the valid bit is set and the tag matches, the controller reads data from SRAM and sends it to the CPU. `MEMSTRB` remains low because SDRAM is not accessed.
 
 ![Case 1 Read Hit](assets/waveform-case-1-read-hit.png)
 
